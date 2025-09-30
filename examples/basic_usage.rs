@@ -66,10 +66,10 @@ async fn main() -> Result<()> {
             if let Some(results) = response.results {
                 println!("  • Found {} trading days", results.len());
                 for (i, bar) in results.iter().take(5).enumerate() {
-                    if let (Some(o), Some(h), Some(l), Some(c), Some(v)) = 
-                        (bar.o, bar.h, bar.l, bar.c, bar.v) {
+                    if let (Some(open), Some(high), Some(low), Some(close), Some(volume)) = 
+                        (bar.open, bar.high, bar.low, bar.close, bar.volume) {
                         println!("  • Day {}: O=${:.2} H=${:.2} L=${:.2} C=${:.2} V={:.0}", 
-                            i + 1, o, h, l, c, v);
+                            i + 1, open, high, low, close, volume);
                     }
                 }
             }
@@ -92,31 +92,22 @@ async fn main() -> Result<()> {
             }
             
             if let Some(last_trade) = &snapshot.last_trade {
-                if let Some(price) = last_trade.p {
-                    println!("  • Last Trade Price: ${:.2}", price);
-                }
-                if let Some(size) = last_trade.s {
-                    println!("  • Last Trade Size: {}", size);
-                }
+                println!("  • Last Trade Price: ${:.2}", last_trade.price);
+                println!("  • Last Trade Size: {}", last_trade.size);
             }
             
             if let Some(last_quote) = &snapshot.last_quote {
-                if let Some(bid) = last_quote.p {
-                    println!("  • Bid: ${:.2} (size: {})", 
-                        bid, 
-                        last_quote.s.unwrap_or(0));
-                }
-                if let Some(ask) = last_quote.ask {
-                    println!("  • Ask: ${:.2} (size: {})", 
-                        ask, 
-                        last_quote.ask_size.unwrap_or(0));
-                }
+                println!("  • Bid: ${:.2} (size: {})", 
+                    last_quote.bid_price, 
+                    last_quote.bid_size);
+                println!("  • Ask: ${:.2} (size: {})", 
+                    last_quote.ask_price, 
+                    last_quote.ask_size);
             }
             
             if let Some(day) = &snapshot.day {
-                if let (Some(o), Some(h), Some(l), Some(c)) = (day.o, day.h, day.l, day.c) {
-                    println!("  • Day OHLC: O=${:.2} H=${:.2} L=${:.2} C=${:.2}", o, h, l, c);
-                }
+                println!("  • Day Range: ${:.2} - ${:.2} (Open: ${:.2}, Close: ${:.2})", 
+                    day.low, day.high, day.open, day.close);
             }
         }
         Err(e) => println!("  ❌ Error fetching snapshot: {}", e),

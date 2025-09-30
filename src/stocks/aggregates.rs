@@ -74,25 +74,40 @@ pub struct PreviousCloseParams {
 pub struct GroupedDaily {
     #[serde(rename = "T")]
     pub ticker: Option<String>,
-    pub c: Option<f64>,
-    pub h: Option<f64>,
-    pub l: Option<f64>,
-    pub o: Option<f64>,
-    pub t: Option<i64>,
-    pub v: Option<f64>,
-    pub vw: Option<f64>,
-    pub n: Option<i64>,
+    #[serde(rename = "c")]
+    pub close: Option<f64>,
+    #[serde(rename = "h")]
+    pub high: Option<f64>,
+    #[serde(rename = "l")]
+    pub low: Option<f64>,
+    #[serde(rename = "o")]
+    pub open: Option<f64>,
+    #[serde(rename = "t")]
+    pub timestamp: Option<i64>,
+    #[serde(rename = "v")]
+    pub volume: Option<f64>,
+    #[serde(rename = "vw")]
+    pub volume_weighted_average: Option<f64>,
+    #[serde(rename = "n")]
+    pub transactions: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreviousClose {
     #[serde(rename = "T")]
     pub ticker: Option<String>,
-    pub c: Option<f64>,
-    pub h: Option<f64>,
-    pub l: Option<f64>,
-    pub o: Option<f64>,
-    pub t: Option<i64>,
-    pub v: Option<f64>,
-    pub vw: Option<f64>,
+    #[serde(rename = "c")]
+    pub close: Option<f64>,
+    #[serde(rename = "h")]
+    pub high: Option<f64>,
+    #[serde(rename = "l")]
+    pub low: Option<f64>,
+    #[serde(rename = "o")]
+    pub open: Option<f64>,
+    #[serde(rename = "t")]
+    pub timestamp: Option<i64>,
+    #[serde(rename = "v")]
+    pub volume: Option<f64>,
+    #[serde(rename = "vw")]
+    pub volume_weighted_average: Option<f64>,
 }

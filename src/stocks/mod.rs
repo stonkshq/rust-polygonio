@@ -13,7 +13,12 @@ pub mod snapshots;
 pub mod trades;
 pub mod quotes;
 
-use crate::{client::PolygonClient, error::Result, types::ApiResponse};
+use crate::{
+    client::PolygonClient, 
+    deserializers::deserialize_volume_as_i64,
+    error::Result, 
+    types::ApiResponse
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -329,21 +334,29 @@ pub struct AggregatesResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregateBar {
     /// The close price for the symbol in the given time period
-    pub c: Option<f64>,
+    #[serde(rename = "c")]
+    pub close: Option<f64>,
     /// The highest price for the symbol in the given time period  
-    pub h: Option<f64>,
+    #[serde(rename = "h")]
+    pub high: Option<f64>,
     /// The lowest price for the symbol in the given time period
-    pub l: Option<f64>,
+    #[serde(rename = "l")]
+    pub low: Option<f64>,
     /// The number of transactions in the aggregate window
-    pub n: Option<i64>,
+    #[serde(rename = "n")]
+    pub transactions: Option<i64>,
     /// The open price for the symbol in the given time period
-    pub o: Option<f64>,
+    #[serde(rename = "o")]
+    pub open: Option<f64>,
     /// The Unix Msec timestamp for the start of the aggregate window
-    pub t: Option<i64>,
+    #[serde(rename = "t")]
+    pub timestamp: Option<i64>,
     /// The trading volume of the symbol in the given time period
-    pub v: Option<f64>,
+    #[serde(rename = "v")]
+    pub volume: Option<f64>,
     /// The volume weighted average price
-    pub vw: Option<f64>,
+    #[serde(rename = "vw")]
+    pub volume_weighted_average: Option<f64>,
 }
 
 /// Snapshot response wrapper
@@ -376,86 +389,131 @@ pub struct TickerSnapshot {
 /// Day trading data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DayData {
-    pub c: Option<f64>,
-    pub h: Option<f64>,
-    pub l: Option<f64>,
-    pub o: Option<f64>,
-    pub v: Option<f64>,
-    pub vw: Option<f64>,
+    /// Close price
+    #[serde(rename = "c")]
+    pub close: f64,
+    /// High price
+    #[serde(rename = "h")]
+    pub high: f64,
+    /// Low price
+    #[serde(rename = "l")]
+    pub low: f64,
+    /// Open price
+    #[serde(rename = "o")]
+    pub open: f64,
+    /// OTC flag (optional field that may be omitted if false)
+    #[serde(rename = "otc")]
+    pub otc: Option<bool>,
+    /// Volume
+    #[serde(rename = "v")]
+    pub volume: f64,
+    /// Volume weighted average price
+    #[serde(rename = "vw")]
+    pub volume_weighted_average: f64,
 }
 
-/// Last quote data
+/// Last quote data (from snapshot)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LastQuote {
     /// Ask price (uppercase P in API)
     #[serde(rename = "P")]
-    pub ask: Option<f64>,
+    pub ask_price: f64,
     /// Ask size (uppercase S in API)
     #[serde(rename = "S")]
-    pub ask_size: Option<i64>,
+    pub ask_size: i64,
     /// Bid price (lowercase p in API)
-    pub p: Option<f64>,
+    #[serde(rename = "p")]
+    pub bid_price: f64,
     /// Bid size (lowercase s in API)
-    pub s: Option<i64>,
+    #[serde(rename = "s")]
+    pub bid_size: i64,
     /// Timestamp
-    pub t: Option<i64>,
+    #[serde(rename = "t")]
+    pub timestamp: i64,
 }
 
-/// Last trade data
+/// Last trade data (from snapshot)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LastTrade {
     /// Conditions
-    pub c: Option<Vec<i32>>,
+    #[serde(rename = "c")]
+    pub conditions: Vec<i32>,
     /// Trade ID
-    pub i: Option<String>,
+    #[serde(rename = "i")]
+    pub trade_id: String,
     /// Price
-    pub p: Option<f64>,
+    #[serde(rename = "p")]
+    pub price: f64,
     /// Size
-    pub s: Option<i64>,
+    #[serde(rename = "s")]
+    pub size: i64,
     /// Timestamp
-    pub t: Option<i64>,
+    #[serde(rename = "t")]
+    pub timestamp: i64,
     /// Exchange
-    pub x: Option<i32>,
+    #[serde(rename = "x")]
+    pub exchange: i32,
 }
 
 /// Minute aggregated data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinuteData {
     /// Accumulated volume
-    pub av: Option<f64>,
+    #[serde(rename = "av", deserialize_with = "deserialize_volume_as_i64")]
+    pub accumulated_volume: i64,
     /// Close price
-    pub c: Option<f64>,
+    #[serde(rename = "c")]
+    pub close: f64,
     /// High price
-    pub h: Option<f64>,
+    #[serde(rename = "h")]
+    pub high: f64,
     /// Low price
-    pub l: Option<f64>,
+    #[serde(rename = "l")]
+    pub low: f64,
     /// Number of transactions
-    pub n: Option<i64>,
+    #[serde(rename = "n")]
+    pub transactions: i64,
     /// Open price
-    pub o: Option<f64>,
+    #[serde(rename = "o")]
+    pub open: f64,
+    /// OTC flag (optional field that may be omitted if false)
+    #[serde(rename = "otc")]
+    pub otc: Option<bool>,
     /// Timestamp
-    pub t: Option<i64>,
+    #[serde(rename = "t")]
+    pub timestamp: i64,
     /// Volume
-    pub v: Option<f64>,
+    #[serde(rename = "v")]
+    pub volume: f64,
     /// Volume weighted average price
-    pub vw: Option<f64>,
+    #[serde(rename = "vw")]
+    pub volume_weighted_average: f64,
 }
 
 /// Previous day data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrevDayData {
     /// Close price
-    pub c: Option<f64>,
+    #[serde(rename = "c")]
+    pub close: f64,
     /// High price
-    pub h: Option<f64>,
+    #[serde(rename = "h")]
+    pub high: f64,
     /// Low price
-    pub l: Option<f64>,
+    #[serde(rename = "l")]
+    pub low: f64,
     /// Open price
-    pub o: Option<f64>,
+    #[serde(rename = "o")]
+    pub open: f64,
+    /// OTC flag (optional field that may be omitted if false)
+    #[serde(rename = "otc")]
+    pub otc: Option<bool>,
     /// Volume
-    pub v: Option<f64>,
+    #[serde(rename = "v")]
+    pub volume: f64,
     /// Volume weighted average price
-    pub vw: Option<f64>,
+    #[serde(rename = "vw")]
+    pub volume_weighted_average: f64,
 }
 
 #[cfg(test)]

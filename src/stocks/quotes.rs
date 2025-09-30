@@ -55,10 +55,10 @@ pub struct QuotesParams {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Quote {
-    pub ask: Option<f64>,
+    pub ask_price: Option<f64>,
     pub ask_exchange: Option<i32>,
     pub ask_size: Option<i64>,
-    pub bid: Option<f64>,
+    pub bid_price: Option<f64>,
     pub bid_exchange: Option<i32>,
     pub bid_size: Option<i64>,
     pub sip_timestamp: Option<i64>,

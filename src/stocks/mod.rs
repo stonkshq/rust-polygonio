@@ -119,15 +119,42 @@ impl StocksClient {
         self.client.get("v1/marketstatus/upcoming", None).await
     }
 
-    /// Get aggregated bars for a ticker over a given date range
+    /// Get aggregated bars (custom OHLC bars) for a ticker over a given date range
+    ///
+    /// This method retrieves aggregated historical OHLC (Open, High, Low, Close) and volume data
+    /// for a specified stock ticker over a custom date range and time interval in Eastern Time (ET).
+    /// Users can tailor their data by adjusting the multiplier and timespan parameters
+    /// (e.g., 5-minute bars, 1-hour bars, daily bars, etc.).
     ///
     /// # Arguments
-    /// * `ticker` - The ticker symbol
-    /// * `multiplier` - The size of the timespan multiplier
-    /// * `timespan` - The size of the time window (minute, hour, day, week, month, quarter, year)
-    /// * `from` - The start of the aggregate time window (YYYY-MM-DD)
-    /// * `to` - The end of the aggregate time window (YYYY-MM-DD)
-    /// * `params` - Optional parameters for the request
+    /// * `ticker` - The stock ticker symbol (e.g., "AAPL")
+    /// * `multiplier` - The size of the timespan multiplier (e.g., 1 for 1-minute, 5 for 5-minute)
+    /// * `timespan` - The time window: "minute", "hour", "day", "week", "month", "quarter", "year"
+    /// * `from` - Start date (YYYY-MM-DD format or millisecond timestamp)
+    /// * `to` - End date (YYYY-MM-DD format or millisecond timestamp)
+    /// * `params` - Optional parameters (adjusted, sort, limit)
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// # use polygon_io::{PolygonClient, Result};
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let client = PolygonClient::new("your-api-key".to_string());
+    /// let stocks = client.stocks();
+    /// 
+    /// // Get 5-minute bars for AAPL from January 1 to January 31, 2024
+    /// let bars = stocks.aggregates("AAPL", 5, "minute", "2024-01-01", "2024-01-31", None).await?;
+    /// 
+    /// if let Some(results) = bars.results {
+    ///     for bar in results {
+    ///         println!("Open: {:.2}, High: {:.2}, Low: {:.2}, Close: {:.2}", 
+    ///             bar.open.unwrap_or(0.0), bar.high.unwrap_or(0.0), 
+    ///             bar.low.unwrap_or(0.0), bar.close.unwrap_or(0.0));
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn aggregates(
         &self,
         ticker: &str,
@@ -136,7 +163,7 @@ impl StocksClient {
         from: &str,
         to: &str,
         params: Option<AggregatesParams>,
-    ) -> Result<ApiResponse<Vec<AggregateBar>>> {
+    ) -> Result<AggregatesResponse> {
         let endpoint = format!(
             "v2/aggs/ticker/{}/range/{}/{}/{}/{}",
             ticker, multiplier, timespan, from, to
@@ -166,7 +193,7 @@ impl StocksClient {
     }
 
     /// Get snapshots for all tickers
-    pub async fn all_tickers_snapshot(&self, params: Option<SnapshotParams>) -> Result<ApiResponse<Vec<TickerSnapshot>>> {
+    pub async fn all_tickers_snapshot(&self, params: Option<SnapshotParams>) -> Result<AllTickersSnapshotResponse> {
         let mut query_params = HashMap::new();
         
         if let Some(p) = params {
@@ -318,16 +345,19 @@ pub struct MarketHoliday {
     pub close: Option<String>,
 }
 
-/// Response wrapper for aggregates data
+/// Response wrapper for aggregates/custom bars data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregatesResponse {
     pub ticker: Option<String>,
     pub adjusted: Option<bool>,
     #[serde(rename = "queryCount")]
     pub query_count: Option<i32>,
+    pub request_id: Option<String>,
     #[serde(rename = "resultsCount")]
     pub results_count: Option<i32>,
+    pub status: String,
     pub results: Option<Vec<AggregateBar>>,
+    pub next_url: Option<String>,
 }
 
 /// Individual aggregate bar data
@@ -348,6 +378,8 @@ pub struct AggregateBar {
     /// The open price for the symbol in the given time period
     #[serde(rename = "o")]
     pub open: Option<f64>,
+    /// Whether or not this aggregate is for an OTC ticker
+    pub otc: Option<bool>,
     /// The Unix Msec timestamp for the start of the aggregate window
     #[serde(rename = "t")]
     pub timestamp: Option<i64>,
@@ -365,6 +397,14 @@ pub struct SnapshotResponse {
     pub request_id: String,
     pub status: String,
     pub ticker: TickerSnapshot,
+}
+
+/// Response wrapper for all tickers snapshots
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AllTickersSnapshotResponse {
+    pub count: Option<i32>,
+    pub status: String,
+    pub tickers: Option<Vec<TickerSnapshot>>,
 }
 
 /// Snapshot data for a ticker
@@ -437,7 +477,7 @@ pub struct LastQuote {
 pub struct LastTrade {
     /// Conditions
     #[serde(rename = "c")]
-    pub conditions: Vec<i32>,
+    pub conditions: Option<Vec<i32>>,
     /// Trade ID
     #[serde(rename = "i")]
     pub trade_id: String,

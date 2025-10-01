@@ -187,9 +187,16 @@ impl PolygonClient {
                     }
                 }
                 
+                // Truncate the JSON text for error messages to avoid massive output
+                let truncated_json = if json_text.len() > 500 {
+                    format!("{}... (truncated, {} total chars)", &json_text[..500], json_text.len())
+                } else {
+                    json_text.clone()
+                };
+                
                 Err(PolygonError::invalid_response(format!(
                     "Failed to deserialize response: {}. Response was: {}",
-                    e, json_text
+                    e, truncated_json
                 )))
             }
         }

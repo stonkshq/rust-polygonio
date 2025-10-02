@@ -3,14 +3,14 @@
 //! This example demonstrates how to fetch custom aggregated    match stocks.aggregates("AAPL", 15, "minute", "2024-09-30", "2024-09-30", Some(minute_params)).await {bars (OHLC data)
 //! for different time intervals and use them for basic technical analysis.
 
-use polygon_io::{stocks::AggregatesParams, PolygonClient, Result};
+use polygonio::{stocks::AggregatesParams, PolygonClient, Result};
 use std::env;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Get API key from environment variable
     let api_key = env::var("POLYGON_API_KEY").map_err(|_| {
-        polygon_io::PolygonError::authentication("Please set POLYGON_API_KEY environment variable")
+        polygonio::PolygonError::authentication("Please set POLYGON_API_KEY environment variable")
     })?;
 
     // Create the client
@@ -237,7 +237,7 @@ async fn main() -> Result<()> {
 }
 
 /// Calculate and display basic statistics for a set of bars
-fn calculate_basic_stats(bars: &[polygon_io::stocks::AggregateBar], timeframe: &str) {
+fn calculate_basic_stats(bars: &[polygonio::stocks::AggregateBar], timeframe: &str) {
     if bars.is_empty() {
         return;
     }

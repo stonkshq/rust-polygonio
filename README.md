@@ -4,7 +4,7 @@ A comprehensive, type-safe Rust client library for the [Polygon.io](https://poly
 
 ## Features
 
-- 🦀 **Fully async/await** - Built with tokio for high-performance async operations  
+- 🦀 **Fully async/await** - Built with tokio for high-performance async operations
 - 🔒 **Type-safe** - Comprehensive type definitions with serde serialization
 - 📊 **Complete API coverage** - Support for all major Polygon.io endpoints
 - 🏗️ **Hierarchical organization** - Structured like Polygon.io's documentation
@@ -32,34 +32,34 @@ use polygon_io::{PolygonClient, Result};
 async fn main() -> Result<()> {
     // Create client with your API key
     let client = PolygonClient::new("your-api-key".to_string());
-    
+
     // Access different asset classes
     let stocks = client.stocks();
     let options = client.options();
     let crypto = client.crypto();
-    
+
     // Get ticker details
     let details = stocks.ticker_details("AAPL").await?;
     println!("Company: {}", details.results.name.unwrap_or_default());
-    
+
     // Get market aggregates (OHLCV data)
     let aggs = stocks.aggregates(
         "AAPL",           // ticker
-        1,                // multiplier  
+        1,                // multiplier
         "day",            // timespan
         "2024-01-01",     // from date
-        "2024-01-31",     // to date  
+        "2024-01-31",     // to date
         None              // optional parameters
     ).await?;
-    
+
     if let Some(results) = aggs.results.and_then(|r| r.results) {
         for bar in results {
-            println!("OHLC: ${:.2} ${:.2} ${:.2} ${:.2}", 
-                bar.o.unwrap_or(0.0), bar.h.unwrap_or(0.0), 
+            println!("OHLC: ${:.2} ${:.2} ${:.2} ${:.2}",
+                bar.o.unwrap_or(0.0), bar.h.unwrap_or(0.0),
                 bar.l.unwrap_or(0.0), bar.c.unwrap_or(0.0));
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -69,10 +69,12 @@ async fn main() -> Result<()> {
 The library is organized hierarchically following Polygon.io's documentation structure:
 
 ### 📈 Stocks (`client.stocks()`)
+
 - **Reference Data**: Ticker details, company information, market holidays
-- **Market Data**: Real-time trades and quotes  
+- **Market Data**: Real-time trades and quotes
 - **Aggregates**: OHLCV bars (minute, hour, day, week, month, etc.)
 - **Snapshots**: Current market state for tickers
+- **Fundamentals**: FINRA short interest metrics (days to cover, average volume)
 - **Corporate Actions**: Dividends, stock splits
 
 ```rust
@@ -81,7 +83,7 @@ let stocks = client.stocks();
 // Get company details
 let details = stocks.ticker_details("AAPL").await?;
 
-// Get daily bars for date range  
+// Get daily bars for date range
 let bars = stocks.aggregates("AAPL", 1, "day", "2024-01-01", "2024-01-31", None).await?;
 
 // Get current snapshot
@@ -89,28 +91,45 @@ let snapshot = stocks.ticker_snapshot("AAPL").await?;
 
 // Get market status
 let status = stocks.market_status().await?;
+
+// Get short interest fundamentals (sorted by most recent)
+let mut short_interest_params = polygon_io::stocks::ShortInterestParams::new("AAPL");
+short_interest_params.sort = Some("settlement_date.desc".to_string());
+short_interest_params.limit = Some(5);
+
+let short_interest = stocks.short_interest(&short_interest_params).await?;
+if let Some(records) = short_interest.results {
+    for entry in records {
+        println!("Short interest on {}: {:?}", entry.settlement_date.unwrap_or_default(), entry.short_interest);
+    }
+}
 ```
 
 ### 🎯 Options (`client.options()`)
+
 - **Contracts**: Options contract details and chains
 - **Market Data**: Options trades and quotes
 - **Aggregates**: OHLCV data for options
 
 ### 📦 Futures (`client.futures()`)
-- **Contracts**: Futures contract specifications  
+
+- **Contracts**: Futures contract specifications
 - **Market Data**: Futures trades and quotes
 - **Aggregates**: OHLCV data for futures
 
 ### 📊 Indices (`client.indices()`)
+
 - **Values**: Index values and calculations
 - **Aggregates**: Historical index data
 
 ### 💱 Forex (`client.forex()`)
+
 - **Real-time Rates**: Live currency exchange rates
 - **Historical Data**: Historical forex data
 - **Aggregates**: OHLCV data for currency pairs
 
 ### ₿ Crypto (`client.crypto()`)
+
 - **Market Data**: Cryptocurrency trades and quotes
 - **Aggregates**: OHLCV data for crypto pairs
 - **Snapshots**: Current crypto market state
@@ -120,11 +139,13 @@ let status = stocks.market_status().await?;
 The client supports multiple authentication methods:
 
 ### API Key in Constructor
+
 ```rust
 let client = PolygonClient::new("your-api-key".to_string());
 ```
 
 ### Environment Variable
+
 ```rust
 let api_key = std::env::var("POLYGON_API_KEY").expect("API key not found");
 let client = PolygonClient::new(api_key);
@@ -162,7 +183,7 @@ All API responses are wrapped in a standard `ApiResponse<T>` structure:
 #[derive(Debug, Deserialize)]
 pub struct ApiResponse<T> {
     pub status: String,           // "OK" for success
-    pub request_id: String,       // Unique request identifier  
+    pub request_id: String,       // Unique request identifier
     pub count: Option<i32>,       // Number of results
     pub results: Option<T>,       // The actual data
     pub next_url: Option<String>, // For pagination
@@ -222,17 +243,20 @@ cargo run --example basic_usage
 
 # Run with custom ticker
 TICKER=MSFT cargo run --example basic_usage
+
+# Inspect FINRA short interest fundamentals
+cargo run --example short_interest
 ```
 
 ## Roadmap
 
 - [x] REST API client foundation
 - [x] Stocks endpoints (reference data, aggregates, snapshots)
-- [x] Comprehensive error handling  
+- [x] Comprehensive error handling
 - [x] Type-safe response deserialization
 - [ ] WebSocket client for real-time data
 - [ ] Options endpoints implementation
-- [ ] Futures endpoints implementation  
+- [ ] Futures endpoints implementation
 - [ ] Forex endpoints implementation
 - [ ] Crypto endpoints implementation
 - [ ] Indices endpoints implementation

@@ -1,13 +1,13 @@
 //! Main client implementation for the Polygon.io API
 
 use crate::{
+    crypto::CryptoClient,
     error::{PolygonError, Result},
-    stocks::StocksClient,
-    options::OptionsClient,
+    forex::ForexClient,
     futures::FuturesClient,
     indices::IndicesClient,
-    forex::ForexClient,
-    crypto::CryptoClient,
+    options::OptionsClient,
+    stocks::StocksClient,
     types::ApiResponse,
 };
 use reqwest::{Client, Response};
@@ -23,10 +23,10 @@ pub const POLYGON_BASE_URL: &str = "https://api.polygon.io";
 pub struct PolygonClient {
     /// HTTP client for making requests
     http_client: Client,
-    
+
     /// API key for authentication
     api_key: String,
-    
+
     /// Base URL for the API
     base_url: String,
 }
@@ -40,7 +40,7 @@ impl PolygonClient {
     /// # Example
     /// ```rust
     /// use polygon_io::PolygonClient;
-    /// 
+    ///
     /// let client = PolygonClient::new("your-api-key".to_string());
     /// ```
     pub fn new(api_key: String) -> Self {
@@ -109,7 +109,7 @@ impl PolygonClient {
         T: DeserializeOwned,
     {
         let url = self.build_url(endpoint, params)?;
-        
+
         let response = self
             .http_client
             .get(&url)
@@ -121,9 +121,13 @@ impl PolygonClient {
     }
 
     /// Make a GET request and return the raw response
-    pub async fn get_raw(&self, endpoint: &str, params: Option<HashMap<String, String>>) -> Result<Response> {
+    pub async fn get_raw(
+        &self,
+        endpoint: &str,
+        params: Option<HashMap<String, String>>,
+    ) -> Result<Response> {
         let url = self.build_url(endpoint, params)?;
-        
+
         let response = self
             .http_client
             .get(&url)
@@ -136,11 +140,14 @@ impl PolygonClient {
 
     /// Build a complete URL for an API endpoint with parameters
     fn build_url(&self, endpoint: &str, params: Option<HashMap<String, String>>) -> Result<String> {
-        let mut url = Url::parse(&format!("{}/{}", self.base_url, endpoint.trim_start_matches('/')))?;
+        let mut url = Url::parse(&format!(
+            "{}/{}",
+            self.base_url,
+            endpoint.trim_start_matches('/')
+        ))?;
 
         // Add API key as query parameter (fallback authentication method)
-        url.query_pairs_mut()
-            .append_pair("apikey", &self.api_key);
+        url.query_pairs_mut().append_pair("apikey", &self.api_key);
 
         // Add additional parameters
         if let Some(params) = params {
@@ -158,27 +165,36 @@ impl PolygonClient {
         T: DeserializeOwned,
     {
         let status = response.status();
-        
+
         if !status.is_success() {
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-            
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+
             return Err(match status.as_u16() {
                 401 => PolygonError::authentication("Invalid API key or unauthorized access"),
                 403 => PolygonError::authentication("Forbidden - check your API key permissions"),
-                429 => PolygonError::rate_limit("Rate limit exceeded - please slow down your requests"),
-                402 => PolygonError::quota_exceeded("Quota exceeded - upgrade your plan or wait for reset"),
+                429 => {
+                    PolygonError::rate_limit("Rate limit exceeded - please slow down your requests")
+                }
+                402 => PolygonError::quota_exceeded(
+                    "Quota exceeded - upgrade your plan or wait for reset",
+                ),
                 _ => PolygonError::api_error(status.as_u16(), error_text),
             });
         }
 
         let json_text = response.text().await?;
-        
+
         // Try to deserialize as the expected type
         match serde_json::from_str::<T>(&json_text) {
             Ok(data) => Ok(data),
             Err(e) => {
                 // If deserialization fails, try to parse as a standard API response to get error details
-                if let Ok(api_response) = serde_json::from_str::<ApiResponse<serde_json::Value>>(&json_text) {
+                if let Ok(api_response) =
+                    serde_json::from_str::<ApiResponse<serde_json::Value>>(&json_text)
+                {
                     if api_response.status != "OK" {
                         return Err(PolygonError::api_error(
                             status.as_u16(),
@@ -186,14 +202,18 @@ impl PolygonClient {
                         ));
                     }
                 }
-                
+
                 // Truncate the JSON text for error messages to avoid massive output
                 let truncated_json = if json_text.len() > 500 {
-                    format!("{}... (truncated, {} total chars)", &json_text[..500], json_text.len())
+                    format!(
+                        "{}... (truncated, {} total chars)",
+                        &json_text[..500],
+                        json_text.len()
+                    )
                 } else {
                     json_text.clone()
                 };
-                
+
                 Err(PolygonError::invalid_response(format!(
                     "Failed to deserialize response: {}. Response was: {}",
                     e, truncated_json
@@ -225,18 +245,28 @@ mod tests {
     #[test]
     fn test_url_building() {
         let client = PolygonClient::new("test-key".to_string());
-        
+
         // Test basic endpoint
-        let url = client.build_url("/v2/aggs/ticker/AAPL/range/1/day/2023-01-01/2023-01-31", None).unwrap();
+        let url = client
+            .build_url(
+                "/v2/aggs/ticker/AAPL/range/1/day/2023-01-01/2023-01-31",
+                None,
+            )
+            .unwrap();
         assert!(url.contains("apikey=test-key"));
         assert!(url.contains("/v2/aggs/ticker/AAPL/range/1/day/2023-01-01/2023-01-31"));
-        
+
         // Test with parameters
         let mut params = HashMap::new();
         params.insert("adjusted".to_string(), "true".to_string());
         params.insert("sort".to_string(), "asc".to_string());
-        
-        let url = client.build_url("/v2/aggs/ticker/AAPL/range/1/day/2023-01-01/2023-01-31", Some(params)).unwrap();
+
+        let url = client
+            .build_url(
+                "/v2/aggs/ticker/AAPL/range/1/day/2023-01-01/2023-01-31",
+                Some(params),
+            )
+            .unwrap();
         assert!(url.contains("apikey=test-key"));
         assert!(url.contains("adjusted=true"));
         assert!(url.contains("sort=asc"));

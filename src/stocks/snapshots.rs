@@ -1,5 +1,5 @@
 //! Market snapshots for stocks
-//! 
+//!
 //! This module provides access to market snapshot data.
 
 use crate::client::PolygonClient;

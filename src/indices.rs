@@ -1,5 +1,5 @@
 //! Indices API client and data types
-//! 
+//!
 //! This module provides access to indices market data from Polygon.io.
 
 use crate::client::PolygonClient;

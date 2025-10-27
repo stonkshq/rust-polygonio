@@ -1,5 +1,5 @@
 //! Reference data for stocks
-//! 
+//!
 //! This module provides access to reference data including ticker details,
 //! exchanges, market holidays, and other metadata.
 

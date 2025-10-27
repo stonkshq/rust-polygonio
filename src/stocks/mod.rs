@@ -1,5 +1,5 @@
 //! Stocks API client and data types
-//! 
+//!
 //! This module provides access to all stock market data endpoints from Polygon.io,
 //! organized hierarchically as per their documentation:
 //! - Market Data (trades, quotes, aggregates, snapshots)
@@ -8,16 +8,14 @@
 
 pub mod aggregates;
 pub mod market_data;
+pub mod quotes;
 pub mod reference;
 pub mod snapshots;
 pub mod trades;
-pub mod quotes;
 
 use crate::{
-    client::PolygonClient, 
-    deserializers::deserialize_volume_as_i64,
-    error::Result, 
-    types::ApiResponse
+    client::PolygonClient, deserializers::deserialize_volume_as_i64, error::Result,
+    types::ApiResponse,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -47,7 +45,7 @@ impl StocksClient {
     /// # async fn main() -> Result<()> {
     /// let client = PolygonClient::new("your-api-key".to_string());
     /// let stocks = client.stocks();
-    /// 
+    ///
     /// let details = stocks.ticker_details("AAPL").await?;
     /// if let Some(ticker) = details.results {
     ///     println!("Company: {}", ticker.name.unwrap_or_default());
@@ -64,9 +62,12 @@ impl StocksClient {
     ///
     /// # Arguments
     /// * `params` - Optional parameters for filtering and pagination
-    pub async fn list_tickers(&self, params: Option<ListTickersParams>) -> Result<ApiResponse<Vec<TickerInfo>>> {
+    pub async fn list_tickers(
+        &self,
+        params: Option<ListTickersParams>,
+    ) -> Result<ApiResponse<Vec<TickerInfo>>> {
         let mut query_params = HashMap::new();
-        
+
         if let Some(p) = params {
             if let Some(market) = p.market {
                 query_params.insert("market".to_string(), market);
@@ -119,6 +120,45 @@ impl StocksClient {
         self.client.get("v1/marketstatus/upcoming", None).await
     }
 
+    /// Get short interest data for stocks
+    ///
+    /// This endpoint returns bi-monthly aggregated short interest data reported to FINRA
+    /// by broker-dealers for the specified ticker. Results include the number of shares
+    /// sold short and contextual metrics like days to cover and average daily volume.
+    pub async fn short_interest(
+        &self,
+        params: &ShortInterestParams,
+    ) -> Result<ApiResponse<Vec<ShortInterestRecord>>> {
+        let mut query_params = HashMap::new();
+        query_params.insert("ticker".to_string(), params.ticker.clone());
+
+        if let Some(date) = params.settlement_date {
+            query_params.insert(
+                "settlement_date".to_string(),
+                date.format("%Y-%m-%d").to_string(),
+            );
+        }
+        if let Some(days_to_cover) = params.days_to_cover {
+            query_params.insert("days_to_cover".to_string(), days_to_cover.to_string());
+        }
+        if let Some(avg_daily_volume) = params.avg_daily_volume {
+            query_params.insert("avg_daily_volume".to_string(), avg_daily_volume.to_string());
+        }
+        if let Some(limit) = params.limit {
+            query_params.insert("limit".to_string(), limit.to_string());
+        }
+        if let Some(sort) = &params.sort {
+            query_params.insert("sort".to_string(), sort.clone());
+        }
+        if let Some(cursor) = &params.cursor {
+            query_params.insert("cursor".to_string(), cursor.clone());
+        }
+
+        self.client
+            .get("stocks/v1/short-interest", Some(query_params))
+            .await
+    }
+
     /// Get aggregated bars (custom OHLC bars) for a ticker over a given date range
     ///
     /// This method retrieves aggregated historical OHLC (Open, High, Low, Close) and volume data
@@ -141,14 +181,14 @@ impl StocksClient {
     /// # async fn main() -> Result<()> {
     /// let client = PolygonClient::new("your-api-key".to_string());
     /// let stocks = client.stocks();
-    /// 
+    ///
     /// // Get 5-minute bars for AAPL from January 1 to January 31, 2024
     /// let bars = stocks.aggregates("AAPL", 5, "minute", "2024-01-01", "2024-01-31", None).await?;
-    /// 
+    ///
     /// if let Some(results) = bars.results {
     ///     for bar in results {
-    ///         println!("Open: {:.2}, High: {:.2}, Low: {:.2}, Close: {:.2}", 
-    ///             bar.open.unwrap_or(0.0), bar.high.unwrap_or(0.0), 
+    ///         println!("Open: {:.2}, High: {:.2}, Low: {:.2}, Close: {:.2}",
+    ///             bar.open.unwrap_or(0.0), bar.high.unwrap_or(0.0),
     ///             bar.low.unwrap_or(0.0), bar.close.unwrap_or(0.0));
     ///     }
     /// }
@@ -170,7 +210,7 @@ impl StocksClient {
         );
 
         let mut query_params = HashMap::new();
-        
+
         if let Some(p) = params {
             if let Some(adjusted) = p.adjusted {
                 query_params.insert("adjusted".to_string(), adjusted.to_string());
@@ -193,9 +233,12 @@ impl StocksClient {
     }
 
     /// Get snapshots for all tickers
-    pub async fn all_tickers_snapshot(&self, params: Option<SnapshotParams>) -> Result<AllTickersSnapshotResponse> {
+    pub async fn all_tickers_snapshot(
+        &self,
+        params: Option<SnapshotParams>,
+    ) -> Result<AllTickersSnapshotResponse> {
         let mut query_params = HashMap::new();
-        
+
         if let Some(p) = params {
             if let Some(tickers) = p.tickers {
                 query_params.insert("tickers".to_string(), tickers.join(","));
@@ -208,7 +251,9 @@ impl StocksClient {
             Some(query_params)
         };
 
-        self.client.get("v2/snapshot/locale/us/markets/stocks/tickers", params).await
+        self.client
+            .get("v2/snapshot/locale/us/markets/stocks/tickers", params)
+            .await
     }
 
     /// Get snapshot for a specific ticker
@@ -247,6 +292,33 @@ pub struct AggregatesParams {
 #[derive(Debug, Clone, Default)]
 pub struct SnapshotParams {
     pub tickers: Option<Vec<String>>,
+}
+
+/// Parameters for querying short interest data
+#[derive(Debug, Clone)]
+pub struct ShortInterestParams {
+    pub ticker: String,
+    pub settlement_date: Option<chrono::NaiveDate>,
+    pub days_to_cover: Option<f64>,
+    pub avg_daily_volume: Option<i64>,
+    pub limit: Option<i32>,
+    pub sort: Option<String>,
+    pub cursor: Option<String>,
+}
+
+impl ShortInterestParams {
+    /// Create a new set of short interest parameters for the provided ticker
+    pub fn new<T: Into<String>>(ticker: T) -> Self {
+        Self {
+            ticker: ticker.into(),
+            settlement_date: None,
+            days_to_cover: None,
+            avg_daily_volume: None,
+            limit: None,
+            sort: None,
+            cursor: None,
+        }
+    }
 }
 
 // Data types for API responses
@@ -556,6 +628,25 @@ pub struct PrevDayData {
     pub volume_weighted_average: f64,
 }
 
+/// Short interest data as reported to FINRA
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShortInterestRecord {
+    /// The average daily trading volume for the reporting period
+    #[serde(rename = "avg_daily_volume")]
+    pub avg_daily_volume: Option<i64>,
+    /// Calculated as short interest divided by average daily volume
+    #[serde(rename = "days_to_cover")]
+    pub days_to_cover: Option<f64>,
+    /// Settlement date for the reported short interest
+    #[serde(rename = "settlement_date")]
+    pub settlement_date: Option<String>,
+    /// Total number of shares sold short but not yet covered
+    #[serde(rename = "short_interest")]
+    pub short_interest: Option<i64>,
+    /// The ticker symbol for the security
+    pub ticker: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::PolygonClient;
@@ -564,7 +655,7 @@ mod tests {
     async fn test_stocks_client_creation() {
         let client = PolygonClient::new("test-key".to_string());
         let _stocks = client.stocks();
-        
+
         // Just verify the client was created successfully
         assert!(true);
     }

@@ -1,5 +1,5 @@
 //! Quotes data for stocks
-//! 
+//!
 //! This module provides access to bid/ask quote data.
 
 use crate::{client::PolygonClient, error::Result, types::ApiResponse};
@@ -20,12 +20,17 @@ impl QuotesClient {
     }
 
     /// Get quotes for a ticker on a given date
-    pub async fn quotes(&self, ticker: &str, date: &str, params: Option<QuotesParams>) -> Result<ApiResponse<Vec<Quote>>> {
+    pub async fn quotes(
+        &self,
+        ticker: &str,
+        date: &str,
+        params: Option<QuotesParams>,
+    ) -> Result<ApiResponse<Vec<Quote>>> {
         let endpoint = format!("v3/quotes/{}", ticker);
-        
+
         let mut query_params = HashMap::new();
         query_params.insert("timestamp".to_string(), date.to_string());
-        
+
         if let Some(p) = params {
             if let Some(timestamp_gte) = p.timestamp_gte {
                 query_params.insert("timestamp.gte".to_string(), timestamp_gte);

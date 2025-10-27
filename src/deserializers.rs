@@ -65,7 +65,7 @@ mod tests {
     fn test_scientific_notation_volume() {
         let json = r#"{"volume": 3.7659058e+07, "optional_volume": 1.5e+06}"#;
         let result: TestVolumeStruct = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(result.volume, 37659058);
         assert_eq!(result.optional_volume, Some(1500000));
     }
@@ -74,7 +74,7 @@ mod tests {
     fn test_regular_volume() {
         let json = r#"{"volume": 1000000, "optional_volume": 500000}"#;
         let result: TestVolumeStruct = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(result.volume, 1000000);
         assert_eq!(result.optional_volume, Some(500000));
     }
@@ -83,7 +83,7 @@ mod tests {
     fn test_null_optional_volume() {
         let json = r#"{"volume": 1000000, "optional_volume": null}"#;
         let result: TestVolumeStruct = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(result.volume, 1000000);
         assert_eq!(result.optional_volume, None);
     }

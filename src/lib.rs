@@ -1,11 +1,11 @@
 //! # Polygon.io API Client
-//! 
+//!
 //! A comprehensive Rust client library for the Polygon.io REST and WebSocket APIs.
 //! This library provides structured access to stock market data following the
 //! hierarchical organization of Polygon.io's documentation.
 //!
 //! ## Features
-//! 
+//!
 //! - REST API client for fetching historical and real-time market data
 //! - WebSocket client for streaming live market data
 //! - Organized by asset classes: Stocks, Options, Futures, Indices, Forex, Crypto
@@ -36,12 +36,12 @@ pub mod error;
 pub mod types;
 
 // Asset class modules following Polygon.io's documentation structure
-pub mod stocks;
-pub mod options;
+pub mod crypto;
+pub mod forex;
 pub mod futures;
 pub mod indices;
-pub mod forex;
-pub mod crypto;
+pub mod options;
+pub mod stocks;
 
 // Re-export main client and common types
 pub use client::PolygonClient;

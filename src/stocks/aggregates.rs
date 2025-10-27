@@ -1,5 +1,5 @@
 //! Aggregates (bars) data for stocks
-//! 
+//!
 //! This module provides access to aggregate/OHLCV data for stocks.
 
 use crate::{client::PolygonClient, error::Result, types::ApiResponse};
@@ -20,9 +20,13 @@ impl AggregatesClient {
     }
 
     /// Get grouped daily aggregates for the entire market
-    pub async fn grouped_daily(&self, date: &str, params: Option<GroupedDailyParams>) -> Result<ApiResponse<Vec<GroupedDaily>>> {
+    pub async fn grouped_daily(
+        &self,
+        date: &str,
+        params: Option<GroupedDailyParams>,
+    ) -> Result<ApiResponse<Vec<GroupedDaily>>> {
         let endpoint = format!("v2/aggs/grouped/locale/us/market/stocks/{}", date);
-        
+
         let mut query_params = HashMap::new();
         if let Some(p) = params {
             if let Some(adjusted) = p.adjusted {
@@ -40,9 +44,13 @@ impl AggregatesClient {
     }
 
     /// Get previous close data for a ticker
-    pub async fn previous_close(&self, ticker: &str, params: Option<PreviousCloseParams>) -> Result<ApiResponse<Vec<PreviousClose>>> {
+    pub async fn previous_close(
+        &self,
+        ticker: &str,
+        params: Option<PreviousCloseParams>,
+    ) -> Result<ApiResponse<Vec<PreviousClose>>> {
         let endpoint = format!("v2/aggs/ticker/{}/prev", ticker);
-        
+
         let mut query_params = HashMap::new();
         if let Some(p) = params {
             if let Some(adjusted) = p.adjusted {

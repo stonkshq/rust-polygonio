@@ -1,5 +1,5 @@
 //! Options API client and data types
-//! 
+//!
 //! This module provides access to options market data from Polygon.io.
 //! Structure follows the same pattern as stocks with contracts, trades, etc.
 

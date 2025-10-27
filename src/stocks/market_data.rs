@@ -1,5 +1,5 @@
 //! Real-time market data for stocks
-//! 
+//!
 //! This module provides access to real-time trades and quotes.
 
 use crate::client::PolygonClient;

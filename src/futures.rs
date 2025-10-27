@@ -1,5 +1,5 @@
 //! Futures API client and data types
-//! 
+//!
 //! This module provides access to futures market data from Polygon.io.
 
 use crate::client::PolygonClient;

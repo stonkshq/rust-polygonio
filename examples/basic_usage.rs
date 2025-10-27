@@ -29,6 +29,15 @@ async fn main() -> Result<()> {
                 if let Some(market_cap) = ticker.market_cap {
                     println!("  • Market Cap: ${:.2}B", market_cap / 1_000_000_000.0);
                 }
+                if let Some(outstanding) = ticker.weighted_shares_outstanding {
+                    println!("  • Weighted Shares Outstanding: {:.0}", outstanding);
+                }
+                if let Some(class_outstanding) = ticker.share_class_shares_outstanding {
+                    println!(
+                        "  • Share Class Shares Outstanding: {:.0}",
+                        class_outstanding
+                    );
+                }
             }
         }
         Err(e) => println!("  ❌ Error fetching ticker details: {}", e),

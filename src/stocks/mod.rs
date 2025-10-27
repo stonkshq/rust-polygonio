@@ -332,6 +332,7 @@ pub struct TickerDetails {
     pub market: Option<String>,
     pub locale: Option<String>,
     pub primary_exchange: Option<String>,
+    #[serde(rename = "type")]
     pub type_field: Option<String>,
     pub active: Option<bool>,
     pub currency_name: Option<String>,
@@ -348,15 +349,22 @@ pub struct TickerDetails {
     pub sic_code: Option<String>,
     pub sic_description: Option<String>,
     pub ticker_root: Option<String>,
+    pub ticker_suffix: Option<String>,
+    pub round_lot: Option<f64>,
+    pub share_class_shares_outstanding: Option<f64>,
+    pub weighted_shares_outstanding: Option<f64>,
+    pub delisted_utc: Option<String>,
 }
 
 /// Address information for a company
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Address {
     pub address1: Option<String>,
+    pub address2: Option<String>,
     pub city: Option<String>,
     pub state: Option<String>,
     pub postal_code: Option<String>,
+    pub country: Option<String>,
 }
 
 /// Branding information for a company
